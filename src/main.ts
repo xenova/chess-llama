@@ -32,7 +32,7 @@ function getValidMap(chess: Chess): Map<Key, Key[]> {
 
 }
 
-const isPromotion = (orig: Key, dest: Key, piece: Piece): boolean => {
+const isPromotion = (dest: Key, piece: Piece): boolean => {
   return (
     piece.role == "pawn" &&
     ((piece.color == "white" && dest[1] == "8") ||
@@ -53,7 +53,7 @@ const cg = Chessground(document.getElementById("app")!, {
     free: false,
     dests: getValidMap(chess),
     events: {
-      after: async (orig, dest, metadata) => {
+      after: async (orig, dest) => {
         if(chess.isGameOver()) {
           cg.set({
             viewOnly: true
@@ -63,7 +63,7 @@ const cg = Chessground(document.getElementById("app")!, {
         }
         let piece = cg.state.pieces.get(dest);
 
-        if(isPromotion(orig, dest, piece!)) {
+        if(isPromotion(dest, piece!)) {
           chess.move({from: orig, to: dest, promotion: "q"})
           moves.push(orig + dest + "q");
         } else {
