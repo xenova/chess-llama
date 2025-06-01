@@ -17,14 +17,25 @@ diffSelector.addEventListener("change", () => {
 	mid = parseInt(diffSelector.value);
 })
 
+async function wait(ms: number): Promise<void> {
+	return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 
 export default async function playLlama(moves: string[], dests: Map<Key, Key[]>): Promise<string> {
+	const start = performance.now();
 	let inputs = await tokenizer(moves.join(" "));
 	let { logits } = await model(inputs);
 	let preds = logits.slice(null, -1, null);
 
 
 	const [_v, {data}] = await topk(preds, k);
+	const end = performance.now();
+	console.log(`Inference took ${end - start} ms`);
+
+	if(end - start < 1000) {
+		await wait(1000 - (end - start));
+	}
 
 	let move: string = "0000";
 

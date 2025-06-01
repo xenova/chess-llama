@@ -2,140 +2,71 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
-		<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>♟️</text></svg>">
+		<link
+			rel="icon"
+			href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>♟️</text></svg>"
+		/>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Chess-Llama</title>
 	</head>
 	<body>
-		<header>
-			<h1>Chess-Llama</h1>
-		</header>
-    <main>
-      <div id="app"></div>
-	  <div id="controls">
-		<label>
-			Chess-Llama Level: <select id="difficulty">
-				<option value="0">Hard</option>
-				<option value="1">Intermediate</option>
-				<option value="2">Easy</option>
-				<option value="3">Very Easy</option>
-			</select>
-		</label>
-		<div id="movesHeader">Moves</div>
-		<div id="moves">
+		<main>
+			<div id="app"></div>
+			<div id="controls">
+				<div id="sidebar-header">
+					<h1>Chess-Llama</h1>
+				</div>
+				<label>
+					Chess-Llama Level:
+					<select id="difficulty">
+						<option value="0">Hard</option>
+						<option value="1">Intermediate</option>
+						<option value="2">Easy</option>
+						<option value="3">Very Easy</option>
+					</select>
+				</label>
+				<div id="movesHeader">Moves</div>
+				<div id="moves"></div>
+				<div id="undocontainer">
+					<button id="undo">Undo</button>
+				</div>
+			</div>
+		</main>
+		<dialog id="colorDialog">
+			<h1>Choose a color</h1>
+			<div class="pieces">
+				<div class="piece-container">
+					<div class="piece king"></div>
+					<button id="whiteSelection">White</button>
+				</div>
+				<div class="piece-container">
+					<div class="piece black king"></div>
+					<button id="blackSelection">Black</button>
+				</div>
+			</div>
+		</dialog>
 
-		</div>
-		<div id="undocontainer">
-			<button id="undo">Undo</button>
-		</div>
-	  </div>
-    </main>
-    <section>
-      <h1>
-        Playing chess using decoder-only transformer models
-      </h1>
-    </section>
-		<section>
-			<h2>Introduction</h2>
-			Chess, a game of strategy and intellect, is one of the world's most widely played board games. Its origins
-			can be traced back to India, where it was first known as "Chaturanga" around the 7th century CE. Chess has
-			long been a benchmark for artificial intelligence. Modern Engines such as Stockfish and AlphaZero are now
-			able to perform better than even the current grandmasters.
-			<br />
-			In recent years, decoder-only transformer has emerged as a powerful architecture, revolutionizing tasks that
-			require sequential understanding and generation, with LLMs like ChatGPT and Gemini being the perfect
-			examples of its capabilities. Given the sequential nature of chess, where each move depends on prior
-			positions and strategies, decoder-only transformer models are well-suited for playing chess.
-		</section>
-		<section>
-			<h2>Objective</h2>
-			We aim to train a lightweight and performant chess model that is based on the decoder-only transformer
-			architecture.
-		</section>
-		<section>
-			<h2>Methodology</h2>
-			We created a tiny Llama-based decoder-only transformer model for chess play, consisting of just 23M
-			parameters. The dataset consists of 3M high-quality games sourced from Lichess.com, played by elite players
-			all around the world. It uses the UCI format for input and output, making it easy to integrate in chess
-			applications. The model is trained for 5 epochs with batch size of 16, on a single Nvidia L4 GPU for 18
-			hours, using the Google Cloud's Vertex AI platform.
-			<table>
-				<tr>
-					<th colspan="2">Hyperparameters</th>
-				</tr>
-				<tr>
-					<td>Total Parameters</td>
-					<td>23001600</td>
-				</tr>
-				<tr>
-					<td>Layers</td>
-					<td>8</td>
-				</tr>
-				<tr>
-					<td>Model Dimensions</td>
-					<td>512</td>
-				</tr>
-				<tr>
-					<td>FFN Dimensions</td>
-					<td>1024</td>
-				</tr>
-				<tr>
-					<td>Attention Heads</td>
-					<td>8</td>
-				</tr>
-				<tr>
-					<td>Key/Value Heads</td>
-					<td>8</td>
-				</tr>
-				<tr>
-					<td>Peak Learning Rate</td>
-					<td>0.0005</td>
-				</tr>
-				<tr>
-					<td>Activation Function</td>
-					<td>SiLU</td>
-				</tr>
-				<tr>
-					<td>Vocabulary Size</td>
-					<td>1974</td>
-				</tr>
-			</table>
-		</section>
-		<section>
-			<h2>Results & Analysis</h2>
-			The model performs with an expected Elo rating of 1400. 99.1 % moves made by the model were legal. It
-			significantly outperforms the global average of 620 at chess.com. It also outperforms other decoder-only
-			transformer based chess models of similar size, like the ones based on the GPT-2 architecture. When
-			competing against Stockfish, the leading chess engine stronger than the best human players, it outperforms
-			it at skill-level 0, but starts to fall behind in higher skill levels, which is expected. Compared to
-			Stockfish, it should have a more human-like feel in its gameplay, mainly due to the training dataset
-			consisting of real-world games. Thanks to its small size and Llama-based architecture, it runs very fast (
-			&lt;0.1s per move ) even on modern mobile devices.
-			<img src="vs.png" alt="Chess-Llama vs Stockfish" />
-		</section>
-		<section>
-			<h2>Conclusion</h2>
-			The results and analysis indicate the following:
-			<ul>
-				<li>
-					99.1 % of the moves played by the model are legal, proving that the attention mechanism can
-					understand the complex rules of chess.
-				</li>
-				<li>
-					Small language models are capable of performing domain-specific tasks while maintaining high
-					performance and efficiency, allowing for a framework consisting of multiple smaller models working
-					together to perform a diverse set of tasks.
-				</li>
-				<li>
-					Inferencing small transformer models is memory-bound, rather than compute-bound. As a result, small
-					language models are extremely fast and can be deployed on edge and mobile devices.
-				</li>
-				<li>
-					The combination of the model’s small size, fast inference speed, and human-like play makes it a good
-					choice for use in resource-constrained environments such as mobile applications and websites.
-				</li>
-			</ul>
-		</section>
+		<dialog id="promotionDialog">
+			<h1>Choose a piece</h1>
+			<div class="pieces">
+				<div class="piece-container">
+					<div class="piece queen"></div>
+					<button id="queenPromotion" value="q">Queen</button>
+				</div>
+				<div class="piece-container">
+					<div class="piece rook"></div>
+					<button id="rookPromotion" value="r">Rook</button>
+				</div>
+				<div class="piece-container">
+					<div class="piece bishop"></div>
+					<button id="bishopPromotion" value="b">Bishop</button>
+				</div>
+				<div class="piece-container">
+					<div class="piece knight"></div>
+					<button id="knightPromotion" value="n">Knight</button>
+				</div>
+			</div>
+		</dialog>
 		<script type="module" src="/src/main.ts"></script>
 	</body>
 </html>

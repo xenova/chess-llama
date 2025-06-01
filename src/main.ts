@@ -29,7 +29,6 @@ function getValidMap(chess: Chess): Map<Key, Key[]> {
     if (ms.length) dests.set(s, ms.map(m => m.to));
   });
   return dests;
-
 }
 
 const isPromotion = (dest: Key, piece: Piece): boolean => {
@@ -40,111 +39,224 @@ const isPromotion = (dest: Key, piece: Piece): boolean => {
   );
 };
 
-
 const chess = new Chess();
-const moves: string[] = ["0-1"];
 
+const moves: string[] = [];
 
-const movesContainer = document.getElementById("moves");
+const movesContainer = document.getElementById("moves")!;
 
+let player: "white" | "black" = "white"
 
 function movesRowBuilder(move: Move) {
-  const row = document.createElement("div")
-  row.classList.add("move")
+  const moveDiv = document.createElement("div");
+  moveDiv.classList.add("move-san");
+  moveDiv.innerText = move.san;
+  let lastRow = movesContainer.querySelector(".move:last-of-type")
+  if (lastRow !== null && lastRow.childElementCount === 2) {
+    lastRow.appendChild(moveDiv);
+  } else {
+    const row = document.createElement("div")
+    row.classList.add("move")
 
-  const index = document.createElement("div");
-  index.classList.add("move-index");
-  index.innerText = `${Math.floor(moves.length / 2)}`;
+    const index = document.createElement("div");
+    index.classList.add("move-index");
+    index.innerText = `${Math.floor(moves.length / 2)}`;
 
-  const whiteMove = document.createElement("div");
-  whiteMove.classList.add("move-san");
-  whiteMove.innerText = move.san;
-
-  const blackMove = document.createElement("div");
-  blackMove.classList.add("move-san");
-
-  row.append(index, whiteMove, blackMove);
-
-  movesContainer?.appendChild(row);
-
-  return blackMove;
+    row.append(index, moveDiv);
+    lastRow = row;
+    movesContainer.appendChild(row);
+  }
 }
 
+const promotionDialog = document.getElementById("promotionDialog")! as HTMLDialogElement;
 
+function showPromotionDialog(): Promise<string> {
+  return new Promise((resolve) => {
+    promotionDialog.showModal();
+
+    const buttons = promotionDialog.querySelectorAll("button");
+    buttons.forEach(button => {
+      button.onclick = () => {
+        promotionDialog.close();
+        resolve(button.value!);
+      }
+    });
+  });
+}
+
+function check(): boolean | "white" | "black" {
+  return chess.isCheck() ? chess.turn() === "w" ? "white" : "black" : false;
+}
+
+async function llamaMove() {
+  const dests = getValidMap(chess);
+  const move = await playLlama(moves, dests);
+  console.log(move);
+  moves.push(move);
+  let oppMove = chess.move(move);
+
+  movesRowBuilder(oppMove);
+
+  cg.set({
+    fen: chess.fen(),
+    movable: {
+      color: player,
+      free: false,
+      dests: getValidMap(chess)
+    },
+    turnColor: player,
+    check: check()
+  });
+
+  if (chess.isGameOver()) {
+    showResult(chess);
+  }
+}
 
 const cg = Chessground(document.getElementById("app")!, {
-  orientation: 'white',
   coordinatesOnSquares: true,
   movable: {
-    color: "white",
+    color: player,
     free: false,
     dests: getValidMap(chess),
     events: {
       after: async (orig, dest) => {
         let piece = cg.state.pieces.get(dest);
-        let whiteM: Move;
+        let playerMove: Move;
 
         if (isPromotion(dest, piece!)) {
-          whiteM = chess.move({ from: orig, to: dest, promotion: "q" })
+          let promotion = await showPromotionDialog();
+          playerMove = chess.move({ from: orig, to: dest, promotion: promotion })
           moves.push(orig + dest + "q");
         } else {
-          whiteM = chess.move({ from: orig, to: dest })
+          playerMove = chess.move({ from: orig, to: dest })
           moves.push(orig + dest);
         }
 
-        const blackMove = movesRowBuilder(whiteM);
+        movesRowBuilder(playerMove);
 
-        if (chess.isGameOver()) {
-          cg.set({
-            viewOnly: true
-          })
-          showResult(chess);
-          return;
-        }
-
-        const dests = getValidMap(chess)
-        const llamaMove = await playLlama(moves, dests);
-        moves.push(llamaMove);
-        let blackM = chess.move(llamaMove);
-
-        blackMove.innerText = blackM.san
         cg.set({
-          fen: chess.fen(), movable: {
-            color: "white",
-            free: false,
-            dests: getValidMap(chess)
-          },
-          turnColor: "white",
+          fen: chess.fen(),
+          turnColor: player == "white" ? "black" : "white",
+          check: check()
         });
 
         if (chess.isGameOver()) {
-          cg.set({
-            viewOnly: true
-          })
           showResult(chess);
           return;
         }
+
+        llamaMove();
       }
     }
+  },
+  fen: chess.fen(),
+  check: check(),
+  highlight: {
+    check: true
   }
 })
 
+document.getElementById("undo")!.onclick = async () => {
+  let popCount = 0;
+  if (player === "white") {
+    popCount = ((moves.length - 1) % 2) === 1 ? 1 : 2;
+  } else {
+    popCount = ((moves.length - 1) % 2) === 0 ? 1 : 2;
+  }
 
-document.getElementById("undo")!.onclick = () => {
-  const lastMove = document.querySelector(".move:last-of-type");
-  if (lastMove) {
-    movesContainer?.removeChild(lastMove);
-    chess.undo()
-    moves.pop()
-    chess.undo()
-    moves.pop()
-    cg.set({
-      fen: chess.fen(), movable: {
-        color: "white",
-        free: false,
-        dests: getValidMap(chess)
-      },
-      turnColor: "white",
-    });
+  while (popCount--) {
+    let lastMove = movesContainer.querySelector(".move:last-of-type");
+    if (lastMove === null) break;
+
+    let lastHalfMove = lastMove?.querySelector(".move-san:last-of-type");
+    if (lastHalfMove !== null) {
+      chess.undo();
+      moves.pop();
+      lastMove?.removeChild(lastHalfMove);
+    }
+    if (lastMove?.childElementCount === 1) {
+      movesContainer.removeChild(lastMove);
+    }
+  }
+
+  cg.set({
+    fen: chess.fen(),
+    viewOnly: false, movable: {
+      color: player,
+      free: false,
+      dests: getValidMap(chess)
+    },
+    check: check(),
+    turnColor: player,
+  });
+
+  if (moves.length === 1 && player === "black") {
+    llamaMove();
   }
 }
+
+async function initGame(playerColor: "white" | "black", state: string[]) {
+  chess.reset();
+  moves.splice(0, moves.length);
+  let promotionOptions = promotionDialog.getElementsByClassName("piece")!;
+
+  player = playerColor;
+
+  if (player === "white") {
+    moves.push("0-1");
+    for (let option of promotionOptions) {
+      option.classList.remove("black");
+    }
+  } else {
+    moves.push("1-0");
+    for (let option of promotionOptions) {
+      option.classList.add("black");
+    }
+  }
+
+  for (let move of state) {
+    moves.push(move);
+    let m = chess.move(move);
+    movesRowBuilder(m);
+  }
+
+  cg.set({
+    orientation: player,
+    fen: chess.fen(),
+    turnColor: player,
+    movable: {
+      color: player,
+      free: false,
+      dests: getValidMap(chess)
+    },
+    check: check(),
+  })
+
+  if (player === "black" && (state.length % 2) === 0) {
+    llamaMove();
+  }
+}
+
+// initGame("black", ["e2e4", "g8f6", "b1c3", "d7d5", "e4e5", "d5d4", "e5f6", "d4c3", "d2d4", "c3b2", "f6g7",])
+
+const colorDialog = document.getElementById("colorDialog")! as HTMLDialogElement;
+const blackButton = document.getElementById("blackSelection")! as HTMLButtonElement;
+const whiteButton = document.getElementById("whiteSelection")! as HTMLButtonElement;
+
+blackButton.onclick = () => {
+  colorDialog.close();
+  colorDialog.returnValue = "black";
+  initGame("black", []);
+}
+whiteButton.onclick = () => {
+  colorDialog.close();
+  colorDialog.returnValue = "white";
+  initGame("white", []);
+}
+
+function startGame() {
+  colorDialog.showModal();
+}
+
+startGame();
