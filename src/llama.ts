@@ -6,9 +6,6 @@ let tokenizer = await LlamaTokenizer.from_pretrained('lazy-guy12/chess-llama');
 let model = await LlamaForCausalLM.from_pretrained('lazy-guy12/chess-llama', {device: "wasm", dtype: "q4"});
 
 let k = tokenizer.model.vocab.length
-model.generation_config.top_k = k;
-model.generation_config.temperature = 0
-model.generation_config.max_new_tokens = 1
 
 let mid = 0;
 
