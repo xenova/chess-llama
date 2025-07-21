@@ -8,11 +8,12 @@ import "/node_modules/chessground/assets/chessground.brown.css"
 import "/node_modules/chessground/assets/chessground.cburnett.css"
 import playLlama from './llama';
 
+let player: "white" | "black" = "white"
 
 function showResult(chess: Chess) {
   if (chess.isCheckmate()) {
     setTimeout(() => {
-      alert((chess.turn() == 'w' ? "Llama" : " You") + " Won!")
+      alert((chess.turn() == player.charAt(0) ? "Llama" : " You") + " Won!")
     }, 1500)
   } else {
     setTimeout(() => {
@@ -44,8 +45,6 @@ const chess = new Chess();
 const moves: string[] = [];
 
 const movesContainer = document.getElementById("moves")!;
-
-let player: "white" | "black" = "white"
 
 function movesRowBuilder(move: Move) {
   const moveDiv = document.createElement("div");
